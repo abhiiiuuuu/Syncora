@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import SymbioteTendrils from './SymbioteTendrils';
 
 /**
- * A restrained magnetic CTA with the original tendril hover effect. It only
- * moves on devices with a fine pointer and no reduced-motion preference, and
- * falls back to a plain link/button.
+ * A restrained magnetic CTA that moves smoothly toward the cursor on hover
+ * for devices with a fine pointer and no reduced-motion preference.
  */
 export default function MagneticButton({
   children,
@@ -17,7 +15,6 @@ export default function MagneticButton({
   const innerRef = useRef(null);
   const frameRef = useRef(null);
   const [enabled, setEnabled] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -36,14 +33,18 @@ export default function MagneticButton({
     };
   }, []);
 
-  const handlePointerEnter = () => {
-    if (enabled) setIsHovering(true);
-  };
-
   const handlePointerLeave = () => {
-    setIsHovering(false);
     const inner = innerRef.current;
-    if (inner) inner.style.transform = '';
+    if (inner) {
+      inner.style.transition = 'transform 0.4s ease-out'; // Smooth return transition
+      inner.style.transform = '';
+      // Remove transition after it completes to avoid interfering with subsequent moves
+      const transitionEndHandler = () => {
+        inner.style.transition = '';
+        inner.removeEventListener('transitionend', transitionEndHandler);
+      };
+      inner.addEventListener('transitionend', transitionEndHandler);
+    }
   };
 
   const handlePointerMove = (event) => {
@@ -53,11 +54,14 @@ export default function MagneticButton({
     if (!wrapper || !inner) return;
 
     const rect = wrapper.getBoundingClientRect();
+    // Center the transformation origin
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;
 
     cancelAnimationFrame(frameRef.current);
     frameRef.current = requestAnimationFrame(() => {
+      // Apply transformation with spring-like easing
+      inner.style.transition = 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)'; // Spring-like easing
       inner.style.transform = `translate3d(${x * strength * 2}px, ${y * strength}px, 0)`;
     });
   };
@@ -75,13 +79,12 @@ export default function MagneticButton({
     <span
       ref={wrapperRef}
       className="relative inline-flex max-w-full align-middle"
-      onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onPointerMove={handlePointerMove}
     >
       <span
         ref={innerRef}
-        className="inline-flex max-w-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+        className="inline-flex max-w-full will-change-transform"
       >
         {href ? (
           <a className={className} {...linkProps}>
@@ -92,7 +95,6 @@ export default function MagneticButton({
             {children}
           </button>
         )}
-        <SymbioteTendrils targetRef={innerRef} active={isHovering && enabled} />
       </span>
     </span>
   );

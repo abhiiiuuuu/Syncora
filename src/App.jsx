@@ -252,7 +252,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [formStatus, setFormStatus] = useState('idle');
-  const [formError, setFormError] = useState('');
+  const [formErrors, setFormErrors] = useState({});
   const [lastMailto, setLastMailto] = useState('');
 
   const progressRef = useRef(null);
@@ -439,7 +439,13 @@ export default function App() {
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setFormData((current) => ({ ...current, [name]: value }));
-    if (formError) setFormError('');
+    if (formErrors[name]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const handleSubmit = (event) => {
@@ -449,13 +455,17 @@ export default function App() {
     const email = formData.email.trim();
     const brief = formData.brief.trim();
 
-    if (!name || !email || !brief) {
-      setFormError('Please add your name, email, and a short project brief.');
-      return;
+    const errors = {};
+    if (!name) errors.name = 'Please add your name.';
+    if (!email) {
+      errors.email = 'Please add your email.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = 'That email address doesn’t look right.';
     }
+    if (!brief) errors.brief = 'Please add a short project brief.';
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setFormError('That email address doesn’t look right. Please check it and try again.');
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
@@ -476,7 +486,7 @@ export default function App() {
       `Project enquiry — ${name}`,
     )}&body=${encodeURIComponent(lines)}`;
 
-    setFormError('');
+    setFormErrors({});
     setLastMailto(href);
     setFormStatus('ready');
     window.location.href = href;
@@ -485,7 +495,7 @@ export default function App() {
   const resetForm = () => {
     setFormData(INITIAL_FORM);
     setFormStatus('idle');
-    setFormError('');
+    setFormErrors({});
     setLastMailto('');
   };
 
@@ -1236,19 +1246,17 @@ export default function App() {
                           <CheckIcon className="h-5 w-5" />
                         </div>
                         <h3 className="display mt-6 text-3xl text-bone sm:text-4xl">
-                          Your brief is ready.
+                          Your brief draft is ready.
                         </h3>
                         <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
-                          Your email app should have opened with your details filled in. Send it
-                          whenever you’re ready. If the draft didn’t open, use the button below or
-                          email us directly.
+                          Your email app should have opened with your enquiry pre-filled. Review and send it whenever you’re ready. (Opening your email client does not automatically deliver a message until sent.)
                         </p>
                         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                           <a
                             href={lastMailto || GENERAL_MAILTO}
                             className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-accent px-6 py-3.5 text-sm font-medium text-ink transition-colors duration-300 hover:bg-bone"
                           >
-                            Open the draft again
+                            Open email client again
                             <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                           </a>
                           <button
@@ -1260,7 +1268,7 @@ export default function App() {
                           </button>
                         </div>
                         <p className="mt-6 text-sm text-muted">
-                          Or email{' '}
+                          Or email us directly at{' '}
                           <a
                             href={`mailto:${CONTACT_EMAIL}`}
                             className="text-bone underline decoration-line underline-offset-4 transition-colors hover:text-accent"
@@ -1283,9 +1291,16 @@ export default function App() {
 
                         <div className="mt-7 grid gap-x-6 gap-y-6 sm:grid-cols-2">
                           <div>
-                            <label htmlFor="name" className="eyebrow text-muted/85">
-                              Name <span className="text-accent">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="name" className="eyebrow text-muted/85">
+                                Name <span className="text-accent">*</span>
+                              </label>
+                              {formErrors.name && (
+                                <span className="font-mono text-[10px] text-red-400" role="alert">
+                                  {formErrors.name}
+                                </span>
+                              )}
+                            </div>
                             <input
                               id="name"
                               name="name"
@@ -1295,14 +1310,22 @@ export default function App() {
                               autoComplete="name"
                               placeholder="Your name"
                               required
-                              className="field mt-1"
+                              aria-invalid={Boolean(formErrors.name)}
+                              className={`field mt-1 ${formErrors.name ? 'border-red-400/70' : ''}`}
                             />
                           </div>
 
                           <div>
-                            <label htmlFor="email" className="eyebrow text-muted/85">
-                              Email <span className="text-accent">*</span>
-                            </label>
+                            <div className="flex items-center justify-between">
+                              <label htmlFor="email" className="eyebrow text-muted/85">
+                                Email <span className="text-accent">*</span>
+                              </label>
+                              {formErrors.email && (
+                                <span className="font-mono text-[10px] text-red-400" role="alert">
+                                  {formErrors.email}
+                                </span>
+                              )}
+                            </div>
                             <input
                               id="email"
                               name="email"
@@ -1312,7 +1335,8 @@ export default function App() {
                               autoComplete="email"
                               placeholder="you@company.com"
                               required
-                              className="field mt-1"
+                              aria-invalid={Boolean(formErrors.email)}
+                              className={`field mt-1 ${formErrors.email ? 'border-red-400/70' : ''}`}
                             />
                           </div>
 
@@ -1391,9 +1415,16 @@ export default function App() {
                         </div>
 
                         <div className="mt-7">
-                          <label htmlFor="brief" className="eyebrow text-muted/85">
-                            Project brief <span className="text-accent">*</span>
-                          </label>
+                          <div className="flex items-center justify-between">
+                            <label htmlFor="brief" className="eyebrow text-muted/85">
+                              Project brief <span className="text-accent">*</span>
+                            </label>
+                            {formErrors.brief && (
+                              <span className="font-mono text-[10px] text-red-400" role="alert">
+                                {formErrors.brief}
+                              </span>
+                            )}
+                          </div>
                           <textarea
                             id="brief"
                             name="brief"
@@ -1402,16 +1433,17 @@ export default function App() {
                             onChange={handleInputChange}
                             placeholder="What are you building, and what would make this project a success?"
                             required
-                            className="field mt-1 resize-none"
+                            aria-invalid={Boolean(formErrors.brief)}
+                            className={`field mt-1 resize-none ${formErrors.brief ? 'border-red-400/70' : ''}`}
                           />
                         </div>
 
-                        {formError && (
+                        {Object.keys(formErrors).length > 0 && (
                           <p
                             role="alert"
                             className="mt-5 border border-red-400/25 bg-red-400/[0.06] px-4 py-3 text-sm text-red-300"
                           >
-                            {formError}
+                            Please correct the highlighted fields above before sending your brief.
                           </p>
                         )}
 
