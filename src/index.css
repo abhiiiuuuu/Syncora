@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Design Plan:
+      - Color: A palette inspired by experimental digital studios, balancing deep, cinematic tones with vivid, luminous accents.
+        --bg-primary: #0a0a0c (Deep Space Blue)
+        --bg-secondary: #121216 (Midnight Ink)
+        --bg-card: #1e1e24 (Charcoal Slate)
+        --border-color: #3a3a44 (Subtle Graphite)
+        --text-main: #ffffff (Pure White)
+        --text-muted: #a0a0b0 (Soft Grey)
+        --accent-vivid: #ff00ff (Electric Magenta)
+        --accent-luminous: #00ffff (Cyber Cyan)
+        --accent-glow: rgba(255, 0, 255, 0.2)
+
+      - Type: A strong, expressive display face paired with a clean, modern font.
+        Display: 'Bebas Neue', sans-serif (Bold, impactful headlines)
+        Body: 'Inter', sans-serif (Readable, versatile for general content)
+        Utility: 'Azeret Mono', monospace (For code, small technical details)
+
+      - Layout: Asymmetry, depth, and visual hierarchy. Generous whitespace, layered elements, and subtle parallax effects.
+    */
+    --bg-primary: #0a0a0c; /* Deep Space Blue */
+    --bg-secondary: #121216; /* Midnight Ink */
+    --bg-card: #1e1e24; /* Charcoal Slate */
+    --border-color: #3a3a44; /* Subtle Graphite */
+    --text-main: #ffffff; /* Pure White */
+    --text-muted: #a0a0b0; /* Soft Grey */
+    --accent-vivid: #ff00ff; /* Electric Magenta */
+    --accent-luminous: #00ffff; /* Cyber Cyan */
+    --accent-glow: rgba(255, 0, 255, 0.2);
+
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-utility: 'Azeret Mono', monospace;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    overflow-x: hidden;
+  }
+}
+
+/* Custom utility & animation classes */
+.bg-grid-pattern {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.glow-lime {
+  box-shadow: 0 0 40px -10px rgba(204, 255, 0, 0.2);
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-slow {
+  animation: pulseGlow 6s ease-in-out infinite;
+}
