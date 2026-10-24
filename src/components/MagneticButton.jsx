@@ -1,118 +1,99 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import SymbioteTendrils from './SymbioteTendrils';
 
-const MagneticButton = ({ children, href, className = '', ...props }) => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+/**
+ * A restrained magnetic CTA with the original tendril hover effect. It only
+ * moves on devices with a fine pointer and no reduced-motion preference, and
+ * falls back to a plain link/button.
+ */
+export default function MagneticButton({
+  children,
+  href,
+  className = '',
+  strength = 12,
+  ...props
+}) {
+  const wrapperRef = useRef(null);
+  const innerRef = useRef(null);
+  const frameRef = useRef(null);
+  const [enabled, setEnabled] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  const containerRef = useRef(null);
-  const buttonRef = useRef(null);
-  const animationFrameRef = useRef(null);
-
-  const handleMouseMove = (e) => {
-    const containerElement = containerRef.current;
-    if (!containerElement) return;
-
-    const rect = containerElement.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const dx = mouseX - centerX;
-    const dy = mouseY - centerY;
-
-    const attractionRadius = 100;
-    const attractionStrength = 0.3;
-    if (Math.abs(dx) < attractionRadius && Math.abs(dy) < attractionRadius) {
-      if (!isHovering) setIsHovering(true);
-
-      const forceX = (dx / attractionRadius) * 20;
-      const forceY = (dy / attractionRadius) * 20;
-
-      const clampedX = Math.max(-20, Math.min(20, forceX));
-      const clampedY = Math.max(-20, Math.min(20, forceY));
-
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      setPosition({ x: clampedX, y: clampedY });
-    } else if (isHovering) {
-      handleMouseLeave();
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovering(false);
-
-    const animateReturn = () => {
-      setPosition((prev) => {
-        const newX = prev.x * 0.85;
-        const newY = prev.y * 0.85;
-
-        if (Math.abs(newX) < 0.1 && Math.abs(newY) < 0.1) {
-          return { x: 0, y: 0 };
-        }
-
-        animationFrameRef.current = requestAnimationFrame(animateReturn);
-        return { x: newX, y: newY };
-      });
-    };
-
-    animationFrameRef.current = requestAnimationFrame(animateReturn);
-  };
 
   useEffect(() => {
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const sync = () => setEnabled(finePointer.matches && !reduceMotion.matches);
+    sync();
+
+    finePointer.addEventListener('change', sync);
+    reduceMotion.addEventListener('change', sync);
+
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      finePointer.removeEventListener('change', sync);
+      reduceMotion.removeEventListener('change', sync);
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, []);
 
-  const transformStyle = {
-    transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
-    transition: isHovering ? 'none' : 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
+  const handlePointerEnter = () => {
+    if (enabled) setIsHovering(true);
   };
 
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  const handlePointerLeave = () => {
+    setIsHovering(false);
+    const inner = innerRef.current;
+    if (inner) inner.style.transform = '';
+  };
 
-  if (prefersReducedMotion || isTouchDevice) {
-    const commonProps = {
-      className: `${className} ${props.className || ''}`,
-      ...props
-    };
-    return href ? <a href={href} {...commonProps}>{children}</a> : <button {...commonProps}>{children}</button>;
-  }
+  const handlePointerMove = (event) => {
+    if (!enabled) return;
+    const wrapper = wrapperRef.current;
+    const inner = innerRef.current;
+    if (!wrapper || !inner) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+    cancelAnimationFrame(frameRef.current);
+    frameRef.current = requestAnimationFrame(() => {
+      inner.style.transform = `translate3d(${x * strength * 2}px, ${y * strength}px, 0)`;
+    });
+  };
+
+  const isExternal = typeof href === 'string' && /^https?:\/\//i.test(href);
+  const linkProps = href
+    ? {
+        href,
+        ...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {}),
+        ...props,
+      }
+    : props;
 
   return (
-    <div
-      ref={containerRef}
-      className="relative inline-block"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
+    <span
+      ref={wrapperRef}
+      className="relative inline-flex max-w-full align-middle"
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+      onPointerMove={handlePointerMove}
     >
-      <div
-        ref={buttonRef}
-        style={transformStyle}
-        className="relative z-10"
+      <span
+        ref={innerRef}
+        className="inline-flex max-w-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
       >
         {href ? (
-          <a href={href} className={`${className} ${props.className || ''} inline-block`} {...props}>
+          <a className={className} {...linkProps}>
             {children}
           </a>
         ) : (
-          <button className={`${className} ${props.className || ''} inline-block`} {...props}>
+          <button className={className} {...props}>
             {children}
           </button>
         )}
-        <SymbioteTendrils targetRef={buttonRef} active={isHovering} />
-      </div>
-    </div>
+        <SymbioteTendrils targetRef={innerRef} active={isHovering && enabled} />
+      </span>
+    </span>
   );
-};
-
-export default MagneticButton;
+}

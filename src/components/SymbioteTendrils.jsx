@@ -1,5 +1,16 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
+/**
+ * The original "symbiote tendrils": dark threads with a lime highlight that
+ * snake out from a target element and chase the pointer.
+ *
+ * The canvas is portalled to the document body because the target button
+ * carries a transform, and a transformed ancestor would trap a
+ * fixed-position canvas inside the button's box. The canvas and its 2D
+ * context are resolved inside the frame loop, so the animation starts even
+ * if the effect runs before the ref is attached.
+ */
 const SymbioteTendrils = ({ targetRef, active }) => {
   const canvasRef = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
@@ -11,50 +22,49 @@ const SymbioteTendrils = ({ targetRef, active }) => {
       mousePos.current = { x: e.clientX, y: e.clientY };
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   useEffect(() => {
     if (!active) {
       if (rafId.current) cancelAnimationFrame(rafId.current);
+      rafId.current = null;
       tendrils.current = [];
-      return;
+      return undefined;
     }
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
     const resize = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
+
     window.addEventListener('resize', resize);
     resize();
 
     class Tendril {
       constructor(anchorX, anchorY, angle, isBranch = false, parentSegment = null) {
         this.segments = [];
-        this.length = isBranch ? 6 + Math.floor(Math.random() * 4) : 12 + Math.floor(Math.random() * 8);
+        this.length = isBranch
+          ? 6 + Math.floor(Math.random() * 4)
+          : 12 + Math.floor(Math.random() * 8);
         this.anchor = { x: anchorX, y: anchorY };
         this.angle = angle;
         this.isBranch = isBranch;
         this.parentSegment = parentSegment;
 
         for (let i = 0; i < this.length; i++) {
-          this.segments.push({
-            x: anchorX,
-            y: anchorY,
-            vx: 0,
-            vy: 0
-          });
+          this.segments.push({ x: anchorX, y: anchorY, vx: 0, vy: 0 });
         }
 
         this.branches = [];
         if (!isBranch && Math.random() > 0.4) {
           const attachIdx = Math.floor(this.length * 0.4);
-          this.branches.push(new Tendril(anchorX, anchorY, angle + (Math.random() - 0.5), true, attachIdx));
+          this.branches.push(
+            new Tendril(anchorX, anchorY, angle + (Math.random() - 0.5), true, attachIdx),
+          );
         }
       }
 
@@ -104,7 +114,7 @@ const SymbioteTendrils = ({ targetRef, active }) => {
           seg.y += Math.cos(time + i * 0.3) * 0.4;
         }
 
-        this.branches.forEach(branch => branch.update(targetX, targetY, this.segments));
+        this.branches.forEach((branch) => branch.update(targetX, targetY, this.segments));
       }
 
       draw(ctx) {
@@ -114,7 +124,7 @@ const SymbioteTendrils = ({ targetRef, active }) => {
         for (let i = 1; i < this.segments.length; i++) {
           const p1 = this.segments[i - 1];
           const p2 = this.segments[i];
-          const ratio = 1 - (i / this.segments.length);
+          const ratio = 1 - i / this.segments.length;
           const currentWidth = Math.max(0.5, baseWidth * ratio);
 
           ctx.lineCap = 'round';
@@ -144,12 +154,14 @@ const SymbioteTendrils = ({ targetRef, active }) => {
         }
 
         ctx.globalAlpha = 1.0;
-        this.branches.forEach(branch => branch.draw(ctx));
+        this.branches.forEach((branch) => branch.draw(ctx));
       }
     }
 
     const initTendrils = () => {
-      const rect = targetRef.current.getBoundingClientRect();
+      const node = targetRef.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const newTendrils = [];
@@ -163,40 +175,63 @@ const SymbioteTendrils = ({ targetRef, active }) => {
       tendrils.current = newTendrils;
     };
 
-    initTendrils();
-
     const render = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (!targetRef.current) return;
+      const canvas = canvasRef.current;
+      const node = targetRef.current;
 
-      const rect = targetRef.current.getBoundingClientRect();
+      // Wait for the canvas ref and target to be attached before painting.
+      if (!canvas || !node) {
+        rafId.current = requestAnimationFrame(render);
+        return;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // The ref can attach after the effect body runs, so size the backing
+      // store here too — otherwise tendrils are drawn outside the bitmap.
+      if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+
+      if (!tendrils.current.length) initTendrils();
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const rect = node.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
+
       tendrils.current.forEach((t) => {
-        const angle = t.angle;
-        t.anchor.x = cx + Math.cos(angle) * (rect.width / 2);
-        t.anchor.y = cy + Math.sin(angle) * (rect.height / 2);
+        t.anchor.x = cx + Math.cos(t.angle) * (rect.width / 2);
+        t.anchor.y = cy + Math.sin(t.angle) * (rect.height / 2);
         t.update(mousePos.current.x, mousePos.current.y);
         t.draw(ctx);
       });
+
       rafId.current = requestAnimationFrame(render);
     };
 
+    // Paint the first frame immediately, then continue on animation frames.
     render();
+
     return () => {
       window.removeEventListener('resize', resize);
       if (rafId.current) cancelAnimationFrame(rafId.current);
+      rafId.current = null;
     };
   }, [active, targetRef]);
 
   if (!active) return null;
 
-  return (
+  return createPortal(
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[60]"
+      className="pointer-events-none fixed inset-0 z-[60]"
       style={{ mixBlendMode: 'normal' }}
-    />
+    />,
+    document.body,
   );
 };
 
