@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Syncora is a single-page studio site. There are no private routes to crawl.

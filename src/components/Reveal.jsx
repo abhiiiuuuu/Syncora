@@ -1,51 +1,43 @@
-import { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 /**
- * Reveals children once they enter the viewport. Content stays visible when
- * motion is reduced or IntersectionObserver is unavailable.
+ * Framer Motion enhanced Reveal component for staggered, spring-based scroll entrances.
  */
 export default function Reveal({
   as: Tag = 'div',
   children,
   className = '',
   delay = 0,
+  duration = 0.8,
+  yOffset = 32,
   ...props
 }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return reduceMotion || typeof IntersectionObserver === 'undefined';
-  });
+  const shouldReduceMotion = useReducedMotion();
+  const MotionTag = motion[Tag] || motion.div;
 
-  useEffect(() => {
-    const node = ref.current;
-    if (!node || visible) return undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: '0px 0px -8% 0px' },
+  if (shouldReduceMotion) {
+    const FallbackTag = Tag;
+    return (
+      <FallbackTag className={className} {...props}>
+        {children}
+      </FallbackTag>
     );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [visible]);
+  }
 
   return (
-    <Tag
-      ref={ref}
-      className={`reveal ${visible ? 'is-visible' : ''} ${className}`}
-      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
+    <MotionTag
+      initial={{ opacity: 0, y: yOffset }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
+      transition={{
+        duration,
+        delay: delay / 1000,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className={className}
       {...props}
     >
       {children}
-    </Tag>
+    </MotionTag>
   );
 }

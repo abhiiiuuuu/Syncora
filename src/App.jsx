@@ -1,9 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import CustomCursor from './components/CustomCursor';
 import Logo from './components/Logo';
 import MagneticButton from './components/MagneticButton';
 import Reveal from './components/Reveal';
-import { ATELIER_NOIR_URL, CONTACT_EMAIL } from './config/site';
+import {
+  ATELIER_NOIR_URL,
+  CLAYKRAFT_URL,
+  CONTACT_EMAIL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_URL,
+  WHATSAPP_URL,
+} from './config/site';
+
+// Three.js is heavy, so the backdrop loads after the page content is usable.
+const Background = lazy(() => import('./components/Scene/Background'));
 
 const NAV_ITEMS = [
   { id: 'work', label: 'Work' },
@@ -141,9 +151,6 @@ const INITIAL_FORM = {
 };
 
 const GENERAL_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Project enquiry — Syncora')}`;
-const ATELIER_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-  'Project enquiry — Atelier Noir-inspired website',
-)}`;
 
 const ArrowUpRight = ({ className = '' }) => (
   <svg
@@ -257,8 +264,6 @@ export default function App() {
 
   const progressRef = useRef(null);
   const heroRef = useRef(null);
-  const posterWrapRef = useRef(null);
-  const posterRef = useRef(null);
   const copyTimerRef = useRef(null);
   const menuButtonRef = useRef(null);
 
@@ -342,6 +347,12 @@ export default function App() {
   }, [mobileMenuOpen]);
 
   useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const firstLink = document.querySelector('#mobile-menu a');
+    firstLink?.focus({ preventScroll: true });
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
     const desktop = window.matchMedia('(min-width: 1024px)');
     const handleChange = () => {
       if (desktop.matches) setMobileMenuOpen(false);
@@ -378,43 +389,6 @@ export default function App() {
     return () => {
       cancelAnimationFrame(frame);
       hero.removeEventListener('pointermove', handlePointerMove);
-    };
-  }, []);
-
-  /* Subtle pointer tilt on the hero project frame */
-  useEffect(() => {
-    const wrapper = posterWrapRef.current;
-    const poster = posterRef.current;
-    if (!wrapper || !poster) return undefined;
-
-    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let frame = 0;
-
-    const handlePointerMove = (event) => {
-      if (!finePointer.matches || reduceMotion.matches) return;
-      const rect = wrapper.getBoundingClientRect();
-      const x = (event.clientX - rect.left) / rect.width - 0.5;
-      const y = (event.clientY - rect.top) / rect.height - 0.5;
-
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        poster.style.transform = `perspective(1100px) rotateY(${x * 4.5}deg) rotateX(${y * -4.5}deg)`;
-      });
-    };
-
-    const reset = () => {
-      cancelAnimationFrame(frame);
-      poster.style.transform = '';
-    };
-
-    wrapper.addEventListener('pointermove', handlePointerMove);
-    wrapper.addEventListener('pointerleave', reset);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      wrapper.removeEventListener('pointermove', handlePointerMove);
-      wrapper.removeEventListener('pointerleave', reset);
     };
   }, []);
 
@@ -500,8 +474,11 @@ export default function App() {
   };
 
   return (
-    <div className="grain relative min-h-screen bg-ink font-body text-bone">
+    <div className="grain relative min-h-screen font-body text-bone">
       <CustomCursor />
+      <Suspense fallback={null}>
+        <Background />
+      </Suspense>
 
       <a
         href="#main"
@@ -528,9 +505,16 @@ export default function App() {
           <a
             href="#top"
             aria-label="Syncora — back to top"
-            className="inline-flex text-bone transition-colors duration-300 hover:text-accent"
+            className="inline-flex rounded-full outline-offset-4 group"
+            onPointerMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = ((e.clientX - rect.left) / rect.width) * 100;
+              const y = ((e.clientY - rect.top) / rect.height) * 100;
+              e.currentTarget.style.setProperty('--shine-x', `${x}%`);
+              e.currentTarget.style.setProperty('--shine-y', `${y}%`);
+            }}
           >
-            <Logo />
+            <Logo animated />
           </a>
 
           <nav className="hidden items-center gap-9 lg:flex" aria-label="Primary">
@@ -646,29 +630,29 @@ export default function App() {
         </div>
       </div>
 
-      <div inert={mobileMenuOpen}>
+      <div inert={mobileMenuOpen} className="relative z-10">
         <main id="main">
           {/* — Hero — */}
           <section
             id="top"
             ref={heroRef}
-            className="relative overflow-hidden pb-16 pt-32 sm:pb-20 sm:pt-40 lg:pb-24 lg:pt-44"
+            className="relative overflow-hidden pb-16 pt-32 sm:pb-20 sm:pt-40 lg:pb-28 lg:pt-44"
           >
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
               <div className="hero-spotlight absolute inset-0" />
-              <div className="absolute -right-24 top-6 h-[28rem] w-[28rem] rounded-full bg-accent/[0.05] blur-[110px] sm:h-[38rem] sm:w-[38rem]" />
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-ink via-ink/80 to-transparent sm:hidden" />
             </div>
 
             <div className="shell relative">
-              <div className="grid items-center gap-14 lg:grid-cols-12 lg:gap-8">
-                <div className="lg:col-span-7">
+              <div className="grid gap-14 lg:grid-cols-12 lg:items-center lg:gap-8">
+                <div className="lg:col-span-8">
                   <div className="hero-rise flex items-center gap-3">
                     <span className="h-px w-8 bg-accent" aria-hidden="true" />
                     <p className="eyebrow text-bone/70">Independent web studio</p>
                   </div>
 
-                  <h1 className="mt-7 text-bone sm:mt-8">
+                  <h1 className="mt-7 max-w-[54rem] text-bone sm:mt-8">
                     <span
                       className="hero-rise display block text-[clamp(4.6rem,15vw,10.5rem)]"
                       style={{ animationDelay: '80ms' }}
@@ -687,7 +671,7 @@ export default function App() {
                   </h1>
 
                   <p
-                    className="hero-rise mt-8 max-w-[36rem] text-base leading-relaxed text-muted sm:text-lg"
+                    className="hero-rise mt-8 max-w-[34rem] text-base leading-relaxed text-muted sm:text-lg"
                     style={{ animationDelay: '280ms' }}
                   >
                     Syncora designs and builds considered websites for businesses that care how
@@ -698,15 +682,17 @@ export default function App() {
                     className="hero-rise mt-9 flex flex-col items-stretch gap-4 sm:flex-row sm:items-center"
                     style={{ animationDelay: '360ms' }}
                   >
-                    <a
+                    <MagneticButton
                       href="#contact"
+                      data-cursor="Start"
                       className="group inline-flex items-center justify-center gap-3 rounded-full bg-accent px-7 py-4 text-sm font-medium text-ink transition-colors duration-300 hover:bg-bone"
                     >
                       Start a project
                       <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                    </a>
+                    </MagneticButton>
                     <a
                       href="#work"
+                      data-cursor="View"
                       className="group inline-flex items-center justify-center gap-3 rounded-full border border-line px-7 py-4 text-sm font-medium text-bone transition-colors duration-300 hover:border-bone/40 hover:bg-bone/[0.04]"
                     >
                       View selected work
@@ -715,7 +701,7 @@ export default function App() {
                   </div>
 
                   <div
-                    className="hero-rise mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line/70 pt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted"
+                    className="hero-rise mt-10 flex max-w-[34rem] flex-wrap items-center gap-x-5 gap-y-2 border-t border-line/70 pt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted"
                     style={{ animationDelay: '440ms' }}
                   >
                     <span>Remote studio</span>
@@ -726,59 +712,28 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-5">
-                  <div
-                    ref={posterWrapRef}
-                    className="hero-rise relative mx-auto w-full max-w-[27rem] lg:max-w-none"
-                    style={{ animationDelay: '300ms' }}
-                  >
-                    <div
-                      aria-hidden="true"
-                      className="absolute -inset-3 translate-x-4 translate-y-4 border border-line/80"
-                    />
-
-                    <a
-                      href="#work"
-                      data-cursor="View"
-                      aria-label="View selected work — Atelier Noir"
-                      className="group block"
-                    >
-                      <span
-                        ref={posterRef}
-                        className="relative block overflow-hidden border border-line bg-panel shadow-[0_30px_80px_-24px_rgba(0,0,0,0.85)] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
-                      >
-                        <img
-                          src="/atelier-noir-cover.svg"
-                          alt="Editorial interior visual for Atelier Noir, with a warm arched room and the words Light, held still."
-                          className="aspect-[4/5] w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
-                          width="1000"
-                          height="1250"
-                          fetchPriority="high"
-                          decoding="async"
-                        />
-                        <span className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
-                      </span>
-                    </a>
-
-                    <div className="mt-4 flex items-center justify-between gap-4">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
-                        <span className="text-accent">01</span> — Atelier Noir preview
-                      </p>
-                      <a
-                        href="#work"
-                        className="group inline-flex items-center gap-1.5 text-xs font-medium text-bone transition-colors hover:text-accent"
-                      >
-                        View project
-                        <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                <div className="hidden lg:col-span-4 lg:block" aria-hidden="true" />
               </div>
 
-              <div className="mt-14 hidden items-center justify-between border-t border-line pt-5 sm:flex">
-                <p className="eyebrow text-muted">Scroll to explore</p>
-                <ArrowDown className="h-4 w-4 text-muted" />
+              <div className="mt-14 flex flex-col gap-4 border-t border-line/70 pt-5 sm:mt-16 sm:flex-row sm:items-center sm:justify-between">
+                <a
+                  href="#work"
+                  data-cursor="View"
+                  className="group inline-flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-sm"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                    Featured
+                  </span>
+                  <span className="text-bone transition-colors duration-300 group-hover:text-accent">
+                    Atelier Noir
+                  </span>
+                  <span className="hidden text-muted sm:inline">— interior design website</span>
+                  <ArrowUpRight className="h-3.5 w-3.5 self-center text-accent transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </a>
+                <p className="eyebrow flex items-center gap-2 text-muted">
+                  Scroll to explore
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </p>
               </div>
             </div>
           </section>
@@ -819,8 +774,8 @@ export default function App() {
                   </h2>
                 </div>
                 <p className="max-w-sm text-sm leading-relaxed text-muted sm:text-base">
-                  One project, presented properly. A closer look at Atelier Noir and the visual
-                  direction behind it.
+                  Two projects, presented properly. A closer look at Atelier Noir and ClayKraft,
+                  and the visual direction behind each.
                 </p>
               </Reveal>
 
@@ -844,14 +799,14 @@ export default function App() {
                         Project preview — visual mockup
                       </span>
                       <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
-                        01 / 01
+                        01 / 02
                       </span>
                     </figcaption>
                   </figure>
                 </Reveal>
 
                 <Reveal delay={120} className="flex flex-col justify-center lg:col-span-7 lg:pl-6">
-                  <p className="eyebrow text-muted">Featured project / Interior design</p>
+                  <p className="eyebrow text-muted">Project 01 / Interior design</p>
                   <h3 className="mt-5 font-editorial text-[clamp(3.2rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.02em] text-bone">
                     Atelier Noir
                   </h3>
@@ -894,42 +849,140 @@ export default function App() {
 
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                     {ATELIER_NOIR_URL ? (
-                      <a
+                      <MagneticButton
                         href={ATELIER_NOIR_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        data-cursor="Open"
                         aria-label="View the live Atelier Noir website (opens in a new tab)"
                         className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-accent px-6 py-3.5 text-sm font-medium text-ink transition-colors duration-300 hover:bg-bone"
                       >
                         View live website
                         <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </a>
+                      </MagneticButton>
                     ) : (
-                      <a
-                        href={ATELIER_MAILTO}
+                      <MagneticButton
+                        href={GENERAL_MAILTO}
                         className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-accent px-6 py-3.5 text-sm font-medium text-ink transition-colors duration-300 hover:bg-bone"
                       >
                         Discuss a similar project
                         <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </a>
+                      </MagneticButton>
                     )}
 
-                    {ATELIER_NOIR_URL && (
-                      <a
-                        href={ATELIER_MAILTO}
-                        className="group inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3.5 text-sm font-medium text-bone transition-colors duration-300 hover:border-accent hover:text-accent"
+                    <MagneticButton
+                      href={WHATSAPP_URL}
+                      data-cursor="Chat"
+                      className="group inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3.5 text-sm font-medium text-bone transition-colors duration-300 hover:border-accent hover:text-accent"
+                    >
+                      Chat on WhatsApp
+                      <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </MagneticButton>
+                  </div>
+                </Reveal>
+
+                <Reveal
+                  delay={80}
+                  className="mt-16 border-t border-line pt-12 lg:col-span-5 lg:col-start-8 lg:row-start-2 lg:mt-28 lg:border-t-0 lg:pt-0"
+                >
+                  <figure className="group relative">
+                    <div className="relative overflow-hidden border border-line bg-panel">
+                      <img
+                        src="/claykraft-cover.svg"
+                        alt="ClayKraft project preview — hand-sculpted clay figures on a studio shelf in warm terracotta light."
+                        className="aspect-[4/5] w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.025]"
+                        width="1000"
+                        height="1250"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
+                    </div>
+                    <figcaption className="flex items-center justify-between gap-4 border-x border-b border-line bg-panel/50 px-4 py-3 sm:px-5">
+                      <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
+                        Project preview — visual mockup
+                      </span>
+                      <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted">
+                        02 / 02
+                      </span>
+                    </figcaption>
+                  </figure>
+                </Reveal>
+
+                <Reveal
+                  delay={160}
+                  className="mt-8 lg:col-span-7 lg:col-start-1 lg:row-start-2 lg:mt-28"
+                >
+                  <p className="eyebrow text-muted">Project 02 / Handmade commerce</p>
+                  <h3 className="mt-5 font-editorial text-[clamp(3.2rem,6vw,5.5rem)] leading-[0.95] tracking-[-0.02em] text-bone">
+                    ClayKraft
+                  </h3>
+                  <p className="mt-6 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+                    A warm, product-led storefront for a handmade clay studio — a collection
+                    browser, a four-step making story, and a lightweight cart, presented with the
+                    same care as the pieces themselves.
+                  </p>
+
+                  <dl className="mt-9 max-w-xl border-t border-line">
+                    {[
+                      ['Category', 'Handmade goods shop'],
+                      ['Focus', 'Collection & making story'],
+                      ['Format', 'Responsive storefront'],
+                      ['Status', CLAYKRAFT_URL ? 'Live website' : 'Featured project'],
+                    ].map(([label, value]) => {
+                      const isLive = label === 'Status' && Boolean(CLAYKRAFT_URL);
+                      return (
+                        <div
+                          key={label}
+                          className="flex items-center justify-between gap-6 border-b border-line py-4"
+                        >
+                          <dt className="eyebrow text-muted">{label}</dt>
+                          <dd
+                            className={`flex items-center gap-2 text-right text-sm ${
+                              isLive ? 'text-accent' : 'text-bone'
+                            }`}
+                          >
+                            {isLive && (
+                              <span
+                                className="h-1.5 w-1.5 rounded-full bg-accent"
+                                aria-hidden="true"
+                              />
+                            )}
+                            {value}
+                          </dd>
+                        </div>
+                      );
+                    })}
+                  </dl>
+
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    {CLAYKRAFT_URL ? (
+                      <MagneticButton
+                        href={CLAYKRAFT_URL}
+                        data-cursor="Open"
+                        aria-label="View the live ClayKraft website (opens in a new tab)"
+                        className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-accent px-6 py-3.5 text-sm font-medium text-ink transition-colors duration-300 hover:bg-bone"
+                      >
+                        View live website
+                        <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      </MagneticButton>
+                    ) : (
+                      <MagneticButton
+                        href={GENERAL_MAILTO}
+                        className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-accent px-6 py-3.5 text-sm font-medium text-ink transition-colors duration-300 hover:bg-bone"
                       >
                         Discuss a similar project
                         <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </a>
+                      </MagneticButton>
                     )}
-                  </div>
 
-                  {import.meta.env.DEV && !ATELIER_NOIR_URL && (
-                    <p className="mt-4 font-mono text-[10px] uppercase leading-relaxed tracking-[0.14em] text-muted">
-                      Add the published URL in src/config/site.js to enable the live-site button.
-                    </p>
-                  )}
+                    <MagneticButton
+                      href={WHATSAPP_URL}
+                      data-cursor="Chat"
+                      className="group inline-flex items-center justify-center gap-2.5 rounded-full border border-line px-6 py-3.5 text-sm font-medium text-bone transition-colors duration-300 hover:border-accent hover:text-accent"
+                    >
+                      Chat on WhatsApp
+                      <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </MagneticButton>
+                  </div>
                 </Reveal>
               </div>
 
@@ -1226,14 +1279,40 @@ export default function App() {
                     </MagneticButton>
                   </div>
 
-                  <div className="mt-10 grid grid-cols-2 gap-6 border-t border-line pt-6 font-mono text-[10px] uppercase tracking-[0.14em]">
+                  <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-line pt-6">
+                    <a
+                      href={WHATSAPP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-cursor="Chat"
+                      className="group block"
+                    >
+                      <span className="eyebrow text-muted">WhatsApp</span>
+                      <span className="mt-1.5 flex items-center gap-1.5 text-sm text-bone transition-colors duration-300 group-hover:text-accent">
+                        Message the studio
+                        <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      </span>
+                    </a>
+                    <a
+                      href={INSTAGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-cursor="Insta"
+                      className="group block"
+                    >
+                      <span className="eyebrow text-muted">Instagram</span>
+                      <span className="mt-1.5 flex items-center gap-1.5 text-sm text-bone transition-colors duration-300 group-hover:text-accent">
+                        {INSTAGRAM_HANDLE}
+                        <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                      </span>
+                    </a>
                     <div>
-                      <p className="text-muted">Studio</p>
-                      <p className="mt-1.5 text-bone">Remote / worldwide</p>
+                      <p className="eyebrow text-muted">Studio</p>
+                      <p className="mt-1.5 text-sm text-bone">Remote / worldwide</p>
                     </div>
                     <div>
-                      <p className="text-muted">Response</p>
-                      <p className="mt-1.5 text-bone">Personal, not automated</p>
+                      <p className="eyebrow text-muted">Response</p>
+                      <p className="mt-1.5 text-sm text-bone">Personal, not automated</p>
                     </div>
                   </div>
                 </Reveal>
@@ -1518,6 +1597,26 @@ export default function App() {
                   Project enquiry
                   <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </a>
+                <div className="mt-4 flex flex-col gap-2.5 text-sm text-muted">
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+                  >
+                    Instagram — {INSTAGRAM_HANDLE}
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </a>
+                  <a
+                    href={WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+                  >
+                    WhatsApp
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </a>
+                </div>
               </div>
 
               <div className="lg:col-span-2">
@@ -1543,7 +1642,7 @@ export default function App() {
             </div>
 
             <div aria-hidden="true" className="pointer-events-none mt-10 select-none overflow-hidden">
-              <p className="display text-center text-[clamp(4.5rem,18vw,17rem)] leading-[0.72] text-bone/[0.06]">
+              <p className="footer-outline-text text-center text-[clamp(4.5rem,18vw,17rem)] leading-[0.72]">
                 Syncora
               </p>
             </div>

@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1250" viewBox="0 0 1000 1250">
+  <title>ClayKraft — handmade clay toys visual</title>
+  <desc>A warm terracotta studio shelf holding small hand-sculpted clay figures under soft light, framed with refined typography.</desc>
+
+  <defs>
+    <radialGradient id="ckBackdrop" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#E9AF84"/>
+      <stop offset="0.52" stop-color="#B8744F"/>
+      <stop offset="1" stop-color="#5E3628"/>
+    </radialGradient>
+    <radialGradient id="ckHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FFE2C0" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FFE2C0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ckBody" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#F0B78C"/>
+      <stop offset="0.55" stop-color="#D08356"/>
+      <stop offset="1" stop-color="#8E4E33"/>
+    </linearGradient>
+    <linearGradient id="ckCap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E08A62"/>
+      <stop offset="1" stop-color="#A64F35"/>
+    </linearGradient>
+    <linearGradient id="ckShelf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A2820"/>
+      <stop offset="1" stop-color="#1C1411"/>
+    </linearGradient>
+    <radialGradient id="ckVignette" cx="50%" cy="44%" r="76%">
+      <stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+    </radialGradient>
+    <filter id="ckGrain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="4" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="1250" fill="#141110"/>
+
+  <!-- studio backdrop -->
+  <circle cx="500" cy="600" r="312" fill="url(#ckBackdrop)"/>
+  <ellipse cx="500" cy="560" rx="330" ry="300" fill="url(#ckHalo)"/>
+
+  <!-- soft light shafts -->
+  <path d="M340 300L300 880H360L400 300Z" fill="#FFF1DD" opacity="0.05"/>
+  <path d="M640 300L600 880H660L700 300Z" fill="#FFF1DD" opacity="0.04"/>
+
+  <!-- shelf -->
+  <rect x="268" y="878" width="464" height="20" rx="7" fill="url(#ckShelf)"/>
+  <rect x="268" y="878" width="464" height="3" rx="1.5" fill="#F4E9DC" opacity="0.16"/>
+  <path d="M318 898v58M682 898v58" stroke="#241A16" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="500" cy="906" rx="250" ry="26" fill="#1A120F" opacity="0.5"/>
+
+  <!-- clay cat -->
+  <g>
+    <ellipse cx="418" cy="852" rx="52" ry="26" fill="#1B120F" opacity="0.4"/>
+    <path d="M470 848c44 4 46-40 34-58" fill="none" stroke="#C97B54" stroke-width="15" stroke-linecap="round"/>
+    <ellipse cx="418" cy="836" rx="56" ry="44" fill="url(#ckBody)"/>
+    <path d="M386 754l4-38 28 26Z" fill="#C97B54"/>
+    <path d="M450 754l-4-38-28 26Z" fill="#C97B54"/>
+    <circle cx="418" cy="782" r="43" fill="url(#ckBody)"/>
+    <circle cx="404" cy="782" r="5" fill="#2A1B15"/>
+    <circle cx="432" cy="782" r="5" fill="#2A1B15"/>
+    <path d="M418 794l-7 6h14Z" fill="#2A1B15"/>
+    <path d="M386 796h16M434 796h16" stroke="#2A1B15" stroke-width="2" opacity="0.55"/>
+    <path d="M398 812c8 7 32 7 40 0" stroke="#2A1B15" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+    <path d="M394 806c-14 4-22 10-26 18" stroke="#FFF1DD" stroke-width="3" fill="none" opacity="0.2"/>
+  </g>
+
+  <!-- clay mushroom -->
+  <g>
+    <ellipse cx="556" cy="866" rx="46" ry="18" fill="#1B120F" opacity="0.4"/>
+    <path d="M540 872v-56a16 16 0 0 1 32 0v56Z" fill="#F4E9DC"/>
+    <path d="M540 830h32" stroke="#D9C7B4" stroke-width="3"/>
+    <path d="M498 826a58 50 0 0 1 116 0Z" fill="url(#ckCap)"/>
+    <circle cx="527" cy="800" r="8" fill="#F7EADA"/>
+    <circle cx="566" cy="789" r="6" fill="#F7EADA"/>
+    <circle cx="585" cy="810" r="5" fill="#F7EADA"/>
+    <path d="M510 818a58 50 0 0 1 26-24" stroke="#FFEBD5" stroke-width="4" fill="none" opacity="0.35" stroke-linecap="round"/>
+  </g>
+
+  <!-- clay heart keychain -->
+  <g>
+    <ellipse cx="654" cy="870" rx="34" ry="13" fill="#1B120F" opacity="0.35"/>
+    <path d="M654 726v34" stroke="#C9B7A2" stroke-width="4"/>
+    <circle cx="654" cy="714" r="15" fill="none" stroke="#E7D8C6" stroke-width="6"/>
+    <path d="M654 866c-30-20-44-36-44-56 0-17 13-29 29-29 9 0 15 4 15 4s6-4 15-4c16 0 29 12 29 29 0 20-14 36-44 56Z" fill="url(#ckBody)"/>
+    <path d="M634 792c6-6 14-8 22-6" stroke="#FFF1DD" stroke-width="4" fill="none" opacity="0.35" stroke-linecap="round"/>
+  </g>
+
+  <!-- frame + typography -->
+  <path d="M64 1088H936" stroke="#F0E7D8" stroke-opacity="0.12"/>
+
+  <g fill="#F0E7D8">
+    <text
+      x="64"
+      y="84"
+      font-family="'Instrument Serif', Georgia, 'Times New Roman', serif"
+      font-size="30"
+      letter-spacing="9"
+    >CLAYKRAFT</text>
+    <text
+      x="936"
+      y="80"
+      text-anchor="end"
+      font-family="'Azeret Mono', ui-monospace, monospace"
+      font-size="10"
+      letter-spacing="3"
+      fill="#D9B79B"
+    >HANDMADE CLAY TOYS</text>
+  </g>
+  <path d="M64 108H936" stroke="#F0E7D8" stroke-opacity="0.14"/>
+  <text
+    x="64"
+    y="146"
+    font-family="'Azeret Mono', ui-monospace, monospace"
+    font-size="10"
+    letter-spacing="3"
+    fill="#9C8B7C"
+  >SELECTED WORK / 02</text>
+
+  <text
+    x="64"
+    y="1148"
+    font-family="'Azeret Mono', ui-monospace, monospace"
+    font-size="10"
+    letter-spacing="4"
+    fill="#D9B79B"
+  >SCULPTED — DRIED — PAINTED — SEALED</text>
+  <text
+    x="64"
+    y="1214"
+    font-family="'Instrument Serif', Georgia, 'Times New Roman', serif"
+    font-size="72"
+    font-style="italic"
+    fill="#F0E7D8"
+  >Shaped by hand.</text>
+  <text
+    x="936"
+    y="1214"
+    text-anchor="end"
+    font-family="'Azeret Mono', ui-monospace, monospace"
+    font-size="10"
+    letter-spacing="3"
+    fill="#9C8B7C"
+  >TINY CLAY FRIENDS</text>
+
+  <rect width="1000" height="1250" fill="url(#ckVignette)"/>
+  <rect width="1000" height="1250" filter="url(#ckGrain)" opacity="0.09" style="mix-blend-mode:overlay"/>
+</svg>

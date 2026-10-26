@@ -1,0 +1,15 @@
+Copyright (c) 2026 Syncora. All rights reserved.
+
+This repository contains the source code, design system, copy and visual
+assets for Syncora's studio website, including the Atelier Noir showcase as
+presented on this site.
+
+No part of this repository may be copied, reproduced, modified, distributed,
+published, sublicensed or used to create derivative works without the prior
+written permission of Syncora.
+
+Third-party assets retain their own terms: the Earth day map in
+`public/textures/earth-day.webp` is NASA Blue Marble imagery (public domain),
+and the typefaces are served by Google Fonts under the SIL Open Font License.
+
+For permission or project enquiries: syncora2415@gmail.com
